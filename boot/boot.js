@@ -10,6 +10,12 @@
     hint(t) { $('boot-hint').textContent = t || ''; },
     fatal(m) { $('boot-fatal').textContent = m || ''; ui.status(''); },
     hide() { $('boot').hidden = true; },
+    // v1.2：「もう一度」のボタン（fn を渡さなければ隠す）
+    retry(label, fn) {
+      let b = $('boot-retry');
+      if (!b) { b = document.createElement('button'); b.id = 'boot-retry'; b.type = 'button'; b.className = 'go'; const f = $('boot-fatal'); f.parentNode.insertBefore(b, f.nextSibling); }
+      b.textContent = label || 'もう一度'; b.hidden = !fn; b.onclick = fn ? () => { b.hidden = true; fn(); } : null;
+    },
   };
 
   function swMsg(msg, onProgress, timeoutMs) {
@@ -33,17 +39,35 @@
     try { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(k.iv) }, kek, b64(k.wrapped))); } catch (e) { return null; }
   }
   function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) { } return null; }
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  // この版のページが必要とする sw.js の版（これより古い sw.js のときは、新しい物に切り替わるまで待つ）
+  const SW_WANT = 1.2;
+  const swNum = (v) => { const m = /(\d+)\.(\d+)$/.exec(String(v || '')); return m ? +m[1] + (+m[2]) / 10 : 0; };
+  function waitController(ms) {
+    return new Promise((r) => { const t = setTimeout(r, ms); navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(t); r(); }, { once: true }); });
+  }
 
   async function setupWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return { mode: 'plain' };
-    try { await navigator.serviceWorker.register('sw.js'); } catch (e) { return { mode: 'plain', err: e }; }
+    let reg = null;
+    try { reg = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }); } catch (e) { return { mode: 'plain', err: e }; }
+    // v1.2：新しい sw.js が公開されていれば、それに切り替わってから進む（古い sw.js のままだと、直した所が効かない）
+    try { await Promise.race([reg.update(), sleep(6000)]); } catch (e) { }
+    if (navigator.serviceWorker.controller && (reg.installing || reg.waiting)) await waitController(8000);
     await navigator.serviceWorker.ready;
     if (!navigator.serviceWorker.controller) {
-      await new Promise(r => { const t = setTimeout(r, 4000); navigator.serviceWorker.addEventListener('controllerchange', () => { clearTimeout(t); r(); }, { once: true }); });
+      await waitController(4000);
       if (!navigator.serviceWorker.controller) { if (!ss('citysys-sw-reload')) { ss('citysys-sw-reload', '1'); location.reload(); await new Promise(() => { }); } return { mode: 'plain' }; }
     }
     ss('citysys-sw-reload', null);
-    const st = await swMsg({ type: 'status' }, null, 15000);
+    let st = await swMsg({ type: 'status' }, null, 15000);
+    if (st && !st.plain && swNum(st.version) < SW_WANT) {
+      // まだ古い sw.js が受け持っている：少し待って、だめなら 1 回だけ開き直す
+      await waitController(5000);
+      st = await swMsg({ type: 'status' }, null, 15000);
+      if (st && swNum(st.version) < SW_WANT && !ss('citysys-sw-upd')) { ss('citysys-sw-upd', '1'); location.reload(); await new Promise(() => { }); }
+    }
+    B.swVersion = st && st.version || '';
     if (!st || st.plain) return { mode: 'plain' };
     return { mode: 'enc', ok: st.ok };
   }
@@ -100,6 +124,7 @@
     } catch (e) {
       console.error(e);
       ui.fatal('開けませんでした。\n' + String(e && e.message || e) + '\n\nネットにつながっているか確かめて、もう一度開いてください');
+      ui.retry('もう一度開く', () => location.reload());
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();

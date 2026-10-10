@@ -1,0 +1,16 @@
+{
+  "name": "City.system",
+  "short_name": "City.system",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "boot/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "boot/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "boot/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

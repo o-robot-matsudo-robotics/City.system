@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="City.system">
+<meta name="theme-color" content="#0b1220">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="boot/icon-180.png">
+<link rel="icon" type="image/png" href="boot/icon-192.png">
+<link rel="stylesheet" href="boot/boot.css">
+<title>City.system</title>
+</head>
+<body>
+<div id="safe-probe"></div>
+<div id="boot">
+  <div class="card">
+    <img class="logo" src="boot/icon-192.png" alt="" width="72" height="72">
+    <h1>City.system</h1>
+    <div class="status" id="boot-status">準備しています…</div>
+    <div class="bar" id="boot-bar"><i></i></div>
+    <form id="boot-form" hidden autocomplete="off">
+      <input id="boot-pw" type="password" inputmode="latin" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="パスワード" aria-label="パスワード">
+      <button class="go" type="submit">ひらく</button>
+      <div class="err" id="boot-err"></div>
+    </form>
+    <div class="err" id="boot-fatal"></div>
+    <div class="hint" id="boot-hint"></div>
+  </div>
+</div>
+<script src="boot/boot.js"></script>
+</body>
+</html>
